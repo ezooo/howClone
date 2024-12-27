@@ -1,0 +1,67 @@
+package com.springproject.controller;
+
+import java.util.List;
+import javax.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import com.springproject.domain.WeatherNow;
+import com.springproject.domain.WeatherNowByDate;
+import com.springproject.repository.WeatherCallNow;
+
+@RequestMapping("/weather")
+@Controller
+public class WeatherController {
+
+	@Autowired
+	private WeatherCallNow weatherCallNow;
+	@GetMapping
+	public String mainPage() {
+		return "Weather";
+	}
+
+	@GetMapping("/search")
+	public String requestAddr(Model model) {
+		System.out.println("requesAddr 입장");
+		List<String> siList=weatherCallNow.getAddrInfo();
+		System.out.println("siList 잘 넘어왔는지 확인 "+ siList);
+		model.addAttribute("siList",siList);
+		return "WeatherNow";
+	}
+	
+	@GetMapping("/now")
+	@ResponseBody
+	public List<WeatherNowByDate> requestWeatherByDate(@RequestParam String selectSi,
+										@RequestParam String selectDong,
+										Model model, HttpSession session) throws Exception {
+		System.out.println("requestWeatherByDate 입장");
+		List<WeatherNow> weatherNowList = weatherCallNow.mainCall(selectSi, selectDong);
+		List<WeatherNowByDate> weatherNowByDateList = weatherCallNow.getWeatherByDate(weatherNowList);
+		model.addAttribute("weatherNowByDateList",weatherNowByDateList);
+		session.setAttribute("weatherNowByDateList", weatherNowByDateList);
+		for(int i=0;i<weatherNowByDateList.size();i++) {
+			WeatherNowByDate oneWeather = weatherNowByDateList.get(i);
+			System.out.println("하나씩 출력해 보기2 : "+oneWeather.getDate());
+			System.out.println("하나씩 출력해 보기2 : "+oneWeather.getFcstDate());
+			System.out.println("하나씩 출력해 보기2 : "+oneWeather.getPTY());
+			System.out.println("하나씩 출력해 보기2 : "+oneWeather.getT1H());
+			System.out.println("하나씩 출력해 보기2 : "+oneWeather.getRN1());
+		}
+//		Map<String,Map<String,String>> weatherByDateList =weatherCallNow.getWeatherByDate(weatherNowList);
+//		model.addAttribute("weatherNowByDateList",weatherByDateList);
+//		session.setAttribute("weatherNowByDateList", weatherByDateList);
+//		System.out.println("weatherNowByDateList 출력하기 " + weatherByDateList);
+		return weatherNowByDateList;
+	}
+	@GetMapping("/selectSi")
+	@ResponseBody
+	public List<String> requestDong(@RequestParam String selectSi){
+		List<String> dongList = weatherCallNow.getDongInfo(selectSi);
+		
+		return dongList;
+	}
+}
